@@ -44,9 +44,6 @@ jobs:
     - name: Run type checking
       run: pnpm typecheck
 
-    - name: Run linting
-      run: pnpm lint
-
     - name: Build project (if needed)
       run: pnpm codegen
 

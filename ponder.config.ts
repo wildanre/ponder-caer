@@ -1,4 +1,8 @@
 import { createConfig, factory } from "ponder";
+import { config } from "dotenv";
+
+// Load environment variables
+config();
 
 import { lendingPoolFactoryAbi } from "./abis/lendingPoolFactoryAbi";
 import { lendingPoolAbi } from "./abis/lendingPoolAbi";

@@ -1,27 +1,37 @@
-import { db } from "ponder:api";
-import schema from "ponder:schema";
 import { Hono } from "hono";
-import { client, graphql } from "ponder";
+import { db, lendingPoolTable, basicTokenSenderTable, priceDataStreamTable, positionTable, liquiditySupplyTable, liquidityWithdrawTable, collateralSupplyTable, borrowDebtTable, borrowDebtCrosschainTable, repayWithCollateralTable } from "../db";
 
 const app = new Hono();
 
-// Built-in endpoints
-app.use("/sql/*", client({ db, schema }));
-app.use("/", graphql({ db, schema }));
-app.use("/graphql", graphql({ db, schema }));
+// Helper function to convert BigInt to string for JSON serialization
+const serializeBigInt = (obj: any): any => {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj === 'bigint') return obj.toString();
+  if (Array.isArray(obj)) return obj.map(serializeBigInt);
+  if (typeof obj === 'object') {
+    const serialized: any = {};
+    for (const [key, value] of Object.entries(obj)) {
+      serialized[key] = serializeBigInt(value);
+    }
+    return serialized;
+  }
+  return obj;
+};
 
-// Custom REST API endpoints
+// Add global BigInt serialization support
+(BigInt.prototype as any).toJSON = function() { return this.toString(); };
+
 
 // GET /api/pools - Get all lending pools
 app.get("/api/pools", async (c) => {
   try {
     const pools = await db
       .select()
-      .from(schema.lendingPool);
+      .from(lendingPoolTable);
     
     return c.json({
       success: true,
-      data: pools,
+      data: serializeBigInt(pools),
       count: pools.length
     });
   } catch (error) {
@@ -40,9 +50,9 @@ app.get("/api/pools/:poolAddress", async (c) => {
     
     const pools = await db
       .select()
-      .from(schema.lendingPool);
+      .from(lendingPoolTable);
     
-    const pool = pools.find(p => p.id === poolAddress);
+    const pool = pools.find((p: any) => p.id === poolAddress);
     
     if (!pool) {
       return c.json({
@@ -53,7 +63,7 @@ app.get("/api/pools/:poolAddress", async (c) => {
 
     return c.json({
       success: true,
-      data: pool
+      data: serializeBigInt(pool)
     });
   } catch (error) {
     return c.json({
@@ -72,37 +82,37 @@ app.get("/api/pools/:poolAddress/activities", async (c) => {
     // Get liquidity supplies for this pool
     const supplies = await db
       .select()
-      .from(schema.liquiditySupply);
-    const poolSupplies = supplies.filter(s => s.poolAddress === poolAddress);
+      .from(liquiditySupplyTable);
+    const poolSupplies = supplies.filter((s: any) => s.poolAddress === poolAddress);
 
     // Get liquidity withdrawals for this pool
     const withdrawals = await db
       .select()
-      .from(schema.liquidityWithdraw);
-    const poolWithdrawals = withdrawals.filter(w => w.poolAddress === poolAddress);
+      .from(liquidityWithdrawTable);
+    const poolWithdrawals = withdrawals.filter((w: any) => w.poolAddress === poolAddress);
 
     // Get collateral supplies for this pool
     const collaterals = await db
       .select()
-      .from(schema.collateralSupply);
-    const poolCollaterals = collaterals.filter(c => c.poolAddress === poolAddress);
+      .from(collateralSupplyTable);
+    const poolCollaterals = collaterals.filter((c: any) => c.poolAddress === poolAddress);
 
     // Get borrows for this pool
     const borrows = await db
       .select()
-      .from(schema.borrowDebt);
-    const poolBorrows = borrows.filter(b => b.poolAddress === poolAddress);
+      .from(borrowDebtTable);
+    const poolBorrows = borrows.filter((b: any) => b.poolAddress === poolAddress);
 
     // Combine all activities with type labels
     const activities = [
-      ...poolSupplies.map(item => ({ ...item, type: 'liquidity_supply' })),
-      ...poolWithdrawals.map(item => ({ ...item, type: 'liquidity_withdraw' })),
-      ...poolCollaterals.map(item => ({ ...item, type: 'collateral_supply' })),
-      ...poolBorrows.map(item => ({ ...item, type: 'borrow' }))
+      ...poolSupplies.map((item: any) => ({ ...item, type: 'liquidity_supply' })),
+      ...poolWithdrawals.map((item: any) => ({ ...item, type: 'liquidity_withdraw' })),
+      ...poolCollaterals.map((item: any) => ({ ...item, type: 'collateral_supply' })),
+      ...poolBorrows.map((item: any) => ({ ...item, type: 'borrow' }))
     ];
 
     // Sort by timestamp (newest first)
-    activities.sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
+    activities.sort((a: any, b: any) => Number(b.timestamp) - Number(a.timestamp));
 
     return c.json({
       success: true,
@@ -130,9 +140,9 @@ app.get("/api/pools/:poolAddress/positions", async (c) => {
     
     const allPositions = await db
       .select()
-      .from(schema.position);
+      .from(positionTable);
     
-    const poolPositions = allPositions.filter(p => p.poolAddress === poolAddress);
+    const poolPositions = allPositions.filter((p: any) => p.poolAddress === poolAddress);
 
     return c.json({
       success: true,
@@ -155,56 +165,56 @@ app.get("/api/users/:userAddress", async (c) => {
     // Get user positions
     const allPositions = await db
       .select()
-      .from(schema.position);
-    const userPositions = allPositions.filter(p => p.user.toLowerCase() === userAddress);
+      .from(positionTable);
+    const userPositions = allPositions.filter((p: any) => p.user.toLowerCase() === userAddress);
 
     // Get user liquidity supplies
     const allSupplies = await db
       .select()
-      .from(schema.liquiditySupply);
-    const userSupplies = allSupplies.filter(s => s.user.toLowerCase() === userAddress);
+      .from(liquiditySupplyTable);
+    const userSupplies = allSupplies.filter((s: any) => s.user.toLowerCase() === userAddress);
 
     // Get user liquidity withdrawals
     const allWithdrawals = await db
       .select()
-      .from(schema.liquidityWithdraw);
-    const userWithdrawals = allWithdrawals.filter(w => w.user.toLowerCase() === userAddress);
+      .from(liquidityWithdrawTable);
+    const userWithdrawals = allWithdrawals.filter((w: any) => w.user.toLowerCase() === userAddress);
 
     // Get user collateral supplies
     const allCollaterals = await db
       .select()
-      .from(schema.collateralSupply);
-    const userCollaterals = allCollaterals.filter(c => c.user.toLowerCase() === userAddress);
+      .from(collateralSupplyTable);
+    const userCollaterals = allCollaterals.filter((c: any) => c.user.toLowerCase() === userAddress);
 
     // Get user borrows
     const allBorrows = await db
       .select()
-      .from(schema.borrowDebt);
-    const userBorrows = allBorrows.filter(b => b.user.toLowerCase() === userAddress);
+      .from(borrowDebtTable);
+    const userBorrows = allBorrows.filter((b: any) => b.user.toLowerCase() === userAddress);
 
     // Get user crosschain borrows
     const allCrosschainBorrows = await db
       .select()
-      .from(schema.borrowDebtCrosschain);
-    const userCrosschainBorrows = allCrosschainBorrows.filter(b => b.user.toLowerCase() === userAddress);
+      .from(borrowDebtCrosschainTable);
+    const userCrosschainBorrows = allCrosschainBorrows.filter((b: any) => b.user.toLowerCase() === userAddress);
 
     // Get user repayments
     const allRepayments = await db
       .select()
-      .from(schema.repayWithCollateral);
-    const userRepayments = allRepayments.filter(r => r.user.toLowerCase() === userAddress);
+      .from(repayWithCollateralTable);
+    const userRepayments = allRepayments.filter((r: any) => r.user.toLowerCase() === userAddress);
 
     return c.json({
       success: true,
       data: {
         positions: userPositions,
         activities: {
-          liquiditySupplies: userSupplies.sort((a, b) => Number(b.timestamp) - Number(a.timestamp)).slice(0, 20),
-          liquidityWithdrawals: userWithdrawals.sort((a, b) => Number(b.timestamp) - Number(a.timestamp)).slice(0, 20),
-          collateralSupplies: userCollaterals.sort((a, b) => Number(b.timestamp) - Number(a.timestamp)).slice(0, 20),
-          borrows: userBorrows.sort((a, b) => Number(b.timestamp) - Number(a.timestamp)).slice(0, 20),
-          crosschainBorrows: userCrosschainBorrows.sort((a, b) => Number(b.timestamp) - Number(a.timestamp)).slice(0, 20),
-          repayments: userRepayments.sort((a, b) => Number(b.timestamp) - Number(a.timestamp)).slice(0, 20)
+          liquiditySupplies: userSupplies.sort((a: any, b: any) => Number(b.timestamp) - Number(a.timestamp)).slice(0, 20),
+          liquidityWithdrawals: userWithdrawals.sort((a: any, b: any) => Number(b.timestamp) - Number(a.timestamp)).slice(0, 20),
+          collateralSupplies: userCollaterals.sort((a: any, b: any) => Number(b.timestamp) - Number(a.timestamp)).slice(0, 20),
+          borrows: userBorrows.sort((a: any, b: any) => Number(b.timestamp) - Number(a.timestamp)).slice(0, 20),
+          crosschainBorrows: userCrosschainBorrows.sort((a: any, b: any) => Number(b.timestamp) - Number(a.timestamp)).slice(0, 20),
+          repayments: userRepayments.sort((a: any, b: any) => Number(b.timestamp) - Number(a.timestamp)).slice(0, 20)
         }
       }
     });
@@ -223,26 +233,26 @@ app.get("/api/users/:userAddress/summary", async (c) => {
     const userAddress = c.req.param("userAddress").toLowerCase();
     
     // Get all user activities
-    const allSupplies = await db.select().from(schema.liquiditySupply);
-    const userSupplies = allSupplies.filter(s => s.user.toLowerCase() === userAddress);
+    const allSupplies = await db.select().from(liquiditySupplyTable);
+    const userSupplies = allSupplies.filter((s: any) => s.user.toLowerCase() === userAddress);
     
-    const allWithdrawals = await db.select().from(schema.liquidityWithdraw);
-    const userWithdrawals = allWithdrawals.filter(w => w.user.toLowerCase() === userAddress);
+    const allWithdrawals = await db.select().from(liquidityWithdrawTable);
+    const userWithdrawals = allWithdrawals.filter((w: any) => w.user.toLowerCase() === userAddress);
     
-    const allCollaterals = await db.select().from(schema.collateralSupply);
-    const userCollaterals = allCollaterals.filter(c => c.user.toLowerCase() === userAddress);
+    const allCollaterals = await db.select().from(collateralSupplyTable);
+    const userCollaterals = allCollaterals.filter((c: any) => c.user.toLowerCase() === userAddress);
     
-    const allBorrows = await db.select().from(schema.borrowDebt);
-    const userBorrows = allBorrows.filter(b => b.user.toLowerCase() === userAddress);
+    const allBorrows = await db.select().from(borrowDebtTable);
+    const userBorrows = allBorrows.filter((b: any) => b.user.toLowerCase() === userAddress);
     
-    const allPositions = await db.select().from(schema.position);
-    const userPositions = allPositions.filter(p => p.user.toLowerCase() === userAddress);
+    const allPositions = await db.select().from(positionTable);
+    const userPositions = allPositions.filter((p: any) => p.user.toLowerCase() === userAddress);
 
     // Calculate totals
-    const totalLiquiditySupplied = userSupplies.reduce((sum, item) => sum + Number(item.amount), 0);
-    const totalLiquidityWithdrawn = userWithdrawals.reduce((sum, item) => sum + Number(item.amount), 0);
-    const totalCollateralSupplied = userCollaterals.reduce((sum, item) => sum + Number(item.amount), 0);
-    const totalBorrowed = userBorrows.reduce((sum, item) => sum + Number(item.amount), 0);
+    const totalLiquiditySupplied = userSupplies.reduce((sum: number, item: any) => sum + Number(item.amount), 0);
+    const totalLiquidityWithdrawn = userWithdrawals.reduce((sum: number, item: any) => sum + Number(item.amount), 0);
+    const totalCollateralSupplied = userCollaterals.reduce((sum: number, item: any) => sum + Number(item.amount), 0);
+    const totalBorrowed = userBorrows.reduce((sum: number, item: any) => sum + Number(item.amount), 0);
 
     return c.json({
       success: true,
@@ -279,27 +289,27 @@ app.get("/api/activities", async (c) => {
     let activities = [];
 
     if (!activityType || activityType === "supply") {
-      const supplies = await db.select().from(schema.liquiditySupply);
-      activities.push(...supplies.map(item => ({ ...item, type: 'liquidity_supply' })));
+      const supplies = await db.select().from(liquiditySupplyTable);
+      activities.push(...supplies.map((item: any) => ({ ...item, type: 'liquidity_supply' })));
     }
 
     if (!activityType || activityType === "withdraw") {
-      const withdrawals = await db.select().from(schema.liquidityWithdraw);
-      activities.push(...withdrawals.map(item => ({ ...item, type: 'liquidity_withdraw' })));
+      const withdrawals = await db.select().from(liquidityWithdrawTable);
+      activities.push(...withdrawals.map((item: any) => ({ ...item, type: 'liquidity_withdraw' })));
     }
 
     if (!activityType || activityType === "borrow") {
-      const borrows = await db.select().from(schema.borrowDebt);
-      activities.push(...borrows.map(item => ({ ...item, type: 'borrow' })));
+      const borrows = await db.select().from(borrowDebtTable);
+      activities.push(...borrows.map((item: any) => ({ ...item, type: 'borrow' })));
     }
 
     if (!activityType || activityType === "collateral") {
-      const collaterals = await db.select().from(schema.collateralSupply);
-      activities.push(...collaterals.map(item => ({ ...item, type: 'collateral_supply' })));
+      const collaterals = await db.select().from(collateralSupplyTable);
+      activities.push(...collaterals.map((item: any) => ({ ...item, type: 'collateral_supply' })));
     }
 
     // Sort by timestamp and limit results
-    activities.sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
+    activities.sort((a: any, b: any) => Number(b.timestamp) - Number(a.timestamp));
     activities = activities.slice(0, limit);
 
     return c.json({
@@ -327,19 +337,19 @@ app.get("/api/positions", async (c) => {
     const poolAddress = c.req.query("pool");
     const limit = parseInt(c.req.query("limit") || "50");
 
-    let positions = await db.select().from(schema.position);
+    let positions = await db.select().from(positionTable);
 
     // Apply filters
     if (userAddress) {
-      positions = positions.filter(p => p.user.toLowerCase() === userAddress.toLowerCase());
+      positions = positions.filter((p: any) => p.user.toLowerCase() === userAddress.toLowerCase());
     }
 
     if (poolAddress) {
-      positions = positions.filter(p => p.poolAddress === poolAddress);
+      positions = positions.filter((p: any) => p.poolAddress === poolAddress);
     }
 
     // Sort by timestamp and limit
-    positions.sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
+    positions.sort((a: any, b: any) => Number(b.timestamp) - Number(a.timestamp));
     positions = positions.slice(0, limit);
 
     return c.json({
@@ -364,14 +374,14 @@ app.get("/api/positions", async (c) => {
 // GET /api/tokens - Get basic token senders and price data streams
 app.get("/api/tokens", async (c) => {
   try {
-    const basicTokenSenders = await db.select().from(schema.basicTokenSender);
-    const priceDataStreams = await db.select().from(schema.priceDataStream);
+    const basicTokenSenders = await db.select().from(basicTokenSenderTable);
+    const priceDataStreams = await db.select().from(priceDataStreamTable);
 
     return c.json({
       success: true,
       data: {
-        basicTokenSenders: basicTokenSenders.sort((a, b) => Number(b.blockNumber) - Number(a.blockNumber)),
-        priceDataStreams: priceDataStreams.sort((a, b) => Number(b.blockNumber) - Number(a.blockNumber))
+        basicTokenSenders: basicTokenSenders.sort((a: any, b: any) => Number(b.blockNumber) - Number(a.blockNumber)),
+        priceDataStreams: priceDataStreams.sort((a: any, b: any) => Number(b.blockNumber) - Number(a.blockNumber))
       }
     });
   } catch (error) {
@@ -387,24 +397,24 @@ app.get("/api/tokens", async (c) => {
 app.get("/api/stats", async (c) => {
   try {
     // Get all data to calculate stats
-    const pools = await db.select().from(schema.lendingPool);
-    const positions = await db.select().from(schema.position);
-    const supplies = await db.select().from(schema.liquiditySupply);
-    const withdrawals = await db.select().from(schema.liquidityWithdraw);
-    const borrows = await db.select().from(schema.borrowDebt);
+    const pools = await db.select().from(lendingPoolTable);
+    const positions = await db.select().from(positionTable);
+    const supplies = await db.select().from(liquiditySupplyTable);
+    const withdrawals = await db.select().from(liquidityWithdrawTable);
+    const borrows = await db.select().from(borrowDebtTable);
 
     // Calculate unique users
     const allUsers = new Set([
-      ...positions.map(p => p.user.toLowerCase()),
-      ...supplies.map(s => s.user.toLowerCase()),
-      ...withdrawals.map(w => w.user.toLowerCase()),
-      ...borrows.map(b => b.user.toLowerCase())
+      ...positions.map((p: any) => p.user.toLowerCase()),
+      ...supplies.map((s: any) => s.user.toLowerCase()),
+      ...withdrawals.map((w: any) => w.user.toLowerCase()),
+      ...borrows.map((b: any) => b.user.toLowerCase())
     ]);
 
     // Calculate totals
-    const totalLiquiditySupplied = supplies.reduce((sum, item) => sum + Number(item.amount), 0);
-    const totalLiquidityWithdrawn = withdrawals.reduce((sum, item) => sum + Number(item.amount), 0);
-    const totalBorrowed = borrows.reduce((sum, item) => sum + Number(item.amount), 0);
+    const totalLiquiditySupplied = supplies.reduce((sum: number, item: any) => sum + Number(item.amount), 0);
+    const totalLiquidityWithdrawn = withdrawals.reduce((sum: number, item: any) => sum + Number(item.amount), 0);
+    const totalBorrowed = borrows.reduce((sum: number, item: any) => sum + Number(item.amount), 0);
 
     return c.json({
       success: true,

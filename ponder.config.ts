@@ -11,6 +11,27 @@ import { lendingPoolDeployerAbi } from "./abis/lendingPoolDeployerAbi";
 import { positionAbi } from "./abis/positionAbi";
 
 export default createConfig({
+  // Hybrid database configuration
+  database: (() => {
+    // Force local SQLite if FORCE_LOCAL_DB is true
+    if (process.env.FORCE_LOCAL_DB === "true") {
+      console.log("🗄️ Using local SQLite database (.ponder folder will be created)");
+      return undefined; // This will make Ponder use SQLite
+    }
+    
+    // Use cloud database if DATABASE_URL is provided
+    if (process.env.DATABASE_URL) {
+      console.log("☁️ Using cloud PostgreSQL database");
+      return {
+        kind: "postgres" as const,
+        connectionString: process.env.DATABASE_URL,
+      };
+    }
+    
+    // Default to SQLite
+    console.log("🗄️ No database config found, defaulting to local SQLite");
+    return undefined;
+  })(),
   chains: {
     arbitrum: {
       id: 421614,

@@ -3,9 +3,12 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@8.15.0",
-  "scripts": {
+  "packageManager": "pnpm@8.15.0",  "scripts": {
     "dev": "ponder dev",
+    "dev:local": "powershell -Command \"$env:FORCE_LOCAL_DB='true'; $env:DATABASE_URL=''; pnpm ponder dev\"",
+    "dev:cloud": "powershell -Command \"$env:FORCE_LOCAL_DB='false'; pnpm ponder dev\"",
+    "dev:hybrid": "powershell -Command \"$env:FORCE_LOCAL_DB='true'; pnpm ponder dev\"",
+    "dev:help": "powershell -ExecutionPolicy Bypass -File ./scripts/dev-helper.ps1",
     "start": "ponder start",
     "db": "ponder db",
     "codegen": "ponder codegen",

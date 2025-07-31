@@ -1,6 +1,5 @@
 import { Hono } from "hono";
-import { db } from "../../db";
-import { liquiditySupply, liquidityWithdraw, collateralSupply, borrowDebt, borrowDebtCrosschain, repayWithCollateral, position as positionTable } from "../../../ponder.schema";
+import { db, liquiditySupplyTable, liquidityWithdrawTable, collateralSupplyTable, borrowDebtTable, borrowDebtCrosschainTable, repayWithCollateralTable, positionTable } from "../../db";
 import { serializeBigInt } from '../index';
 
 export const userRoutes = new Hono();
@@ -11,12 +10,12 @@ userRoutes.get("/users/:userAddress", async (c) => {
     const userAddress = c.req.param("userAddress").toLowerCase();
 
     // Get user activities
-    const supplies = await db.select().from(liquiditySupply);
-    const withdrawals = await db.select().from(liquidityWithdraw);
-    const collaterals = await db.select().from(collateralSupply);
-    const borrows = await db.select().from(borrowDebt);
-    const crosschainBorrows = await db.select().from(borrowDebtCrosschain);
-    const repayments = await db.select().from(repayWithCollateral);
+    const supplies = await db.select().from(liquiditySupplyTable);
+    const withdrawals = await db.select().from(liquidityWithdrawTable);
+    const collaterals = await db.select().from(collateralSupplyTable);
+    const borrows = await db.select().from(borrowDebtTable);
+    const crosschainBorrows = await db.select().from(borrowDebtCrosschainTable);
+    const repayments = await db.select().from(repayWithCollateralTable);
     const positions = await db.select().from(positionTable);
 
     // Filter by user address
@@ -110,12 +109,12 @@ userRoutes.post("/users/leaderboard", async (c) => {
     } = body;
 
     // Get all user activities
-    const supplies = await db.select().from(liquiditySupply);
-    const withdrawals = await db.select().from(liquidityWithdraw);
-    const collaterals = await db.select().from(collateralSupply);
-    const borrows = await db.select().from(borrowDebt);
-    const crosschainBorrows = await db.select().from(borrowDebtCrosschain);
-    const repayments = await db.select().from(repayWithCollateral);
+    const supplies = await db.select().from(liquiditySupplyTable);
+    const withdrawals = await db.select().from(liquidityWithdrawTable);
+    const collaterals = await db.select().from(collateralSupplyTable);
+    const borrows = await db.select().from(borrowDebtTable);
+    const crosschainBorrows = await db.select().from(borrowDebtCrosschainTable);
+    const repayments = await db.select().from(repayWithCollateralTable);
     const positions = await db.select().from(positionTable);
 
     // Calculate timeframe filter
@@ -283,10 +282,10 @@ userRoutes.post("/users/search", async (c) => {
     } = body;
 
     // Get all activities to build user profiles
-    const supplies = await db.select().from(liquiditySupply);
-    const withdrawals = await db.select().from(liquidityWithdraw);
-    const collaterals = await db.select().from(collateralSupply);
-    const borrows = await db.select().from(borrowDebt);
+    const supplies = await db.select().from(liquiditySupplyTable);
+    const withdrawals = await db.select().from(liquidityWithdrawTable);
+    const collaterals = await db.select().from(collateralSupplyTable);
+    const borrows = await db.select().from(borrowDebtTable);
     const positions = await db.select().from(positionTable);
 
     // Group by user

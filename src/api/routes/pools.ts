@@ -1,6 +1,5 @@
 import { Hono } from "hono";
-import { db } from "../../db";
-import { lendingPool, liquiditySupply, liquidityWithdraw, collateralSupply, borrowDebt, position } from "../../../ponder.schema";
+import { db, lendingPoolTable, liquiditySupplyTable, liquidityWithdrawTable, collateralSupplyTable, borrowDebtTable, positionTable } from "../../db";
 import { serializeBigInt } from '../index';
 
 export const poolRoutes = new Hono();
@@ -10,7 +9,7 @@ poolRoutes.get("/pools", async (c) => {
   try {
     const pools = await db
       .select()
-      .from(lendingPool);
+      .from(lendingPoolTable);
     
     return c.json({
       success: true,
@@ -33,7 +32,7 @@ poolRoutes.get("/pools/:poolAddress", async (c) => {
     
     const pools = await db
       .select()
-      .from(lendingPool);
+      .from(lendingPoolTable);
     
     const pool = pools.find((p: any) => p.id === poolAddress);
     
@@ -65,25 +64,25 @@ poolRoutes.get("/pools/:poolAddress/activities", async (c) => {
     // Get liquidity supplies for this pool
     const supplies = await db
       .select()
-      .from(liquiditySupply);
+      .from(liquiditySupplyTable);
     const poolSupplies = supplies.filter((s: any) => s.poolAddress === poolAddress);
 
     // Get liquidity withdrawals for this pool
     const withdrawals = await db
       .select()
-      .from(liquidityWithdraw);
+      .from(liquidityWithdrawTable);
     const poolWithdrawals = withdrawals.filter((w: any) => w.poolAddress === poolAddress);
 
     // Get collateral supplies for this pool
     const collaterals = await db
       .select()
-      .from(collateralSupply);
+      .from(collateralSupplyTable);
     const poolCollaterals = collaterals.filter((c: any) => c.poolAddress === poolAddress);
 
     // Get borrows for this pool
     const borrows = await db
       .select()
-      .from(borrowDebt);
+      .from(borrowDebtTable);
     const poolBorrows = borrows.filter((b: any) => b.poolAddress === poolAddress);
 
     // Combine all activities with type labels
@@ -123,7 +122,7 @@ poolRoutes.get("/pools/:poolAddress/positions", async (c) => {
     
     const allPositions = await db
       .select()
-      .from(position);
+      .from(positionTable);
     
     const poolPositions = allPositions.filter((p: any) => p.poolAddress === poolAddress);
 
@@ -153,7 +152,7 @@ poolRoutes.post("/pools/search", async (c) => {
       offset = 0 
     } = body;
 
-    let pools = await db.select().from(lendingPool);
+    let pools = await db.select().from(lendingPoolTable);
 
     // Apply filters
     if (collateralToken) {
@@ -212,10 +211,10 @@ poolRoutes.post("/pools/analytics", async (c) => {
 
     for (const poolAddress of poolAddresses) {
       // Get all activities for this pool
-      const supplies = await db.select().from(liquiditySupply);
-      const withdrawals = await db.select().from(liquidityWithdraw);
-      const collaterals = await db.select().from(collateralSupply);
-      const borrows = await db.select().from(borrowDebt);
+      const supplies = await db.select().from(liquiditySupplyTable);
+      const withdrawals = await db.select().from(liquidityWithdrawTable);
+      const collaterals = await db.select().from(collateralSupplyTable);
+      const borrows = await db.select().from(borrowDebtTable);
 
       const poolSupplies = supplies.filter((s: any) => s.poolAddress === poolAddress);
       const poolWithdrawals = withdrawals.filter((w: any) => w.poolAddress === poolAddress);

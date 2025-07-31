@@ -20,7 +20,7 @@ export const basicTokenSender = onchainTable("basic_token_sender", (t) => ({
 }));
 
 export const priceDataStream = onchainTable("price_data_stream", (t) => ({
-  id: t.text().primaryKey(), // token-dataStream
+  id: t.text().primaryKey(), // txHash-logIndex
   token: t.text().notNull(),
   dataStream: t.text().notNull(),
   blockNumber: t.bigint().notNull(),

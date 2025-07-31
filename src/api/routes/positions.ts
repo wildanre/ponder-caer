@@ -1,5 +1,6 @@
 import { Hono } from "hono";
-import { db, positionTable, collateralSupplyTable, borrowDebtTable, liquiditySupplyTable } from "../../db";
+import { db } from "../../db";
+import { position as positionTable, collateralSupply, borrowDebt, liquiditySupply } from "../../../ponder.schema";
 import { serializeBigInt } from '../index';
 
 export const positionRoutes = new Hono();
@@ -10,7 +11,6 @@ positionRoutes.get("/positions", async (c) => {
     const positions = await db
       .select()
       .from(positionTable);
-    
     return c.json({
       success: true,
       data: serializeBigInt(positions),
@@ -89,8 +89,8 @@ positionRoutes.get("/positions/:positionId/history", async (c) => {
     const positionId = c.req.param("positionId");
     
     // Get all related transactions
-    const collaterals = await db.select().from(collateralSupplyTable);
-    const borrows = await db.select().from(borrowDebtTable);
+    const collaterals = await db.select().from(collateralSupply);
+    const borrows = await db.select().from(borrowDebt);
     
     const positionCollaterals = collaterals.filter((c: any) => 
       c.id.includes(positionId) || c.borrower === positionId
@@ -239,6 +239,24 @@ positionRoutes.post("/positions/search", async (c) => {
     return c.json({
       success: false,
       error: "Failed to search positions",
+      message: error instanceof Error ? error.message : "Unknown error"
+    }, 500);
+  }
+});
+
+// GET /liquidity-supplies - Get all liquidity supplies
+positionRoutes.get("/liquidity-supplies", async (c) => {
+  try {
+    const supplies = await db.select().from(liquiditySupply);
+    return c.json({
+      success: true,
+      data: serializeBigInt(supplies),
+      count: supplies.length
+    });
+  } catch (error) {
+    return c.json({
+      success: false,
+      error: "Failed to fetch liquidity supplies",
       message: error instanceof Error ? error.message : "Unknown error"
     }, 500);
   }

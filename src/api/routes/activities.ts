@@ -1,5 +1,6 @@
 import { Hono } from "hono";
-import { db, liquiditySupplyTable, liquidityWithdrawTable, collateralSupplyTable, borrowDebtTable, borrowDebtCrosschainTable, repayWithCollateralTable } from "../../db";
+import { db } from "../../db";
+import { liquiditySupply, liquidityWithdraw, collateralSupply, borrowDebt, borrowDebtCrosschain, repayWithCollateral } from "../../../ponder.schema";
 import { serializeBigInt } from '../index';
 
 export const activityRoutes = new Hono();
@@ -12,12 +13,12 @@ activityRoutes.get("/activities", async (c) => {
     const type = c.req.query("type"); // Filter by activity type
 
     // Get all activities
-    const supplies = await db.select().from(liquiditySupplyTable);
-    const withdrawals = await db.select().from(liquidityWithdrawTable);
-    const collaterals = await db.select().from(collateralSupplyTable);
-    const borrows = await db.select().from(borrowDebtTable);
-    const crosschainBorrows = await db.select().from(borrowDebtCrosschainTable);
-    const repayments = await db.select().from(repayWithCollateralTable);
+    const supplies = await db.select().from(liquiditySupply);
+    const withdrawals = await db.select().from(liquidityWithdraw);
+    const collaterals = await db.select().from(collateralSupply);
+    const borrows = await db.select().from(borrowDebt);
+    const crosschainBorrows = await db.select().from(borrowDebtCrosschain);
+    const repayments = await db.select().from(repayWithCollateral);
 
     // Combine all activities with type labels
     let allActivities = [
@@ -68,12 +69,12 @@ activityRoutes.get("/activities/user/:userAddress", async (c) => {
     const offset = parseInt(c.req.query("offset") || "0");
 
     // Get all activities for user
-    const supplies = await db.select().from(liquiditySupplyTable);
-    const withdrawals = await db.select().from(liquidityWithdrawTable);
-    const collaterals = await db.select().from(collateralSupplyTable);
-    const borrows = await db.select().from(borrowDebtTable);
-    const crosschainBorrows = await db.select().from(borrowDebtCrosschainTable);
-    const repayments = await db.select().from(repayWithCollateralTable);
+    const supplies = await db.select().from(liquiditySupply);
+    const withdrawals = await db.select().from(liquidityWithdraw);
+    const collaterals = await db.select().from(collateralSupply);
+    const borrows = await db.select().from(borrowDebt);
+    const crosschainBorrows = await db.select().from(borrowDebtCrosschain);
+    const repayments = await db.select().from(repayWithCollateral);
 
     // Filter by user address and combine
     const userActivities = [
@@ -129,12 +130,12 @@ activityRoutes.post("/activities/search", async (c) => {
     } = body;
 
     // Get all activities
-    const supplies = await db.select().from(liquiditySupplyTable);
-    const withdrawals = await db.select().from(liquidityWithdrawTable);
-    const collaterals = await db.select().from(collateralSupplyTable);
-    const borrows = await db.select().from(borrowDebtTable);
-    const crosschainBorrows = await db.select().from(borrowDebtCrosschainTable);
-    const repayments = await db.select().from(repayWithCollateralTable);
+    const supplies = await db.select().from(liquiditySupply);
+    const withdrawals = await db.select().from(liquidityWithdraw);
+    const collaterals = await db.select().from(collateralSupply);
+    const borrows = await db.select().from(borrowDebt);
+    const crosschainBorrows = await db.select().from(borrowDebtCrosschain);
+    const repayments = await db.select().from(repayWithCollateral);
 
     // Combine all activities with type labels
     let allActivities = [
@@ -230,12 +231,12 @@ activityRoutes.post("/activities/analytics", async (c) => {
     const { timeframe = '24h', groupBy = 'hour' } = body;
 
     // Get all activities
-    const supplies = await db.select().from(liquiditySupplyTable);
-    const withdrawals = await db.select().from(liquidityWithdrawTable);
-    const collaterals = await db.select().from(collateralSupplyTable);
-    const borrows = await db.select().from(borrowDebtTable);
-    const crosschainBorrows = await db.select().from(borrowDebtCrosschainTable);
-    const repayments = await db.select().from(repayWithCollateralTable);
+    const supplies = await db.select().from(liquiditySupply);
+    const withdrawals = await db.select().from(liquidityWithdraw);
+    const collaterals = await db.select().from(collateralSupply);
+    const borrows = await db.select().from(borrowDebt);
+    const crosschainBorrows = await db.select().from(borrowDebtCrosschain);
+    const repayments = await db.select().from(repayWithCollateral);
 
     // Calculate timeframe in seconds
     let timeframeSeconds = 24 * 3600; // default 24h

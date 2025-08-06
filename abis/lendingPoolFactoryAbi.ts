@@ -48,7 +48,7 @@ export const lendingPoolFactoryAbi = [
           type: "address",
         },
         {
-          indexed: false,
+          indexed: true,
           internalType: "address",
           name: "lendingPool",
           type: "address",
@@ -173,5 +173,12 @@ export const lendingPoolFactoryAbi = [
       outputs: [{ internalType: "address", name: "", type: "address" }],
       stateMutability: "view",
       type: "function",
-    }
+    },
+    {
+      inputs: [{ internalType: "address", name: "_helper", type: "address" }],
+      name: "updateHelper",
+      outputs: [],
+      stateMutability: "nonpayable",
+      type: "function",
+    },
 ] as const;

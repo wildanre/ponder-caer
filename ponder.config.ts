@@ -12,47 +12,46 @@ import { positionAbi } from "./abis/positionAbi";
 
 export default createConfig({
   chains: {
-    arbitrum: {
-      id: 421614,
+    etherlink: {
+      id: 128123,
       rpc:
-        process.env.ARB_SEPOLIA_RPC_URL ||
-        "https://sepolia-rollup.arbitrum.io/rpc",
+        process.env.ETHERLINK_TESTNET_RPC_URL
     },
   },
   contracts: {
     isHealthy: {
-      chain: "arbitrum",
+      chain: "etherlink",
       abi: isHealthyAbi as any,
-      address: "0x3e8915376e2afE25915BA66b45AC5df54df61F19",
-      startBlock: 174058000,
+      address: "0x7234365A362e33C93C8E9eeAd107266368C57f0d",
+      startBlock: 20856651,
     },
 
     lendingPoolDeployer: {
-      chain: "arbitrum",
+      chain: "etherlink",
       abi: lendingPoolDeployerAbi as any,
-      address: "0x722Ca412b27f38157e94AC5332A6D90f5aB7c5EF",
-      startBlock: 174058000,
+      address: "0x15b469dA6a57f8E67EE3fdA0CCd3699e159DeeE9",
+      startBlock: 20856651,
     },
 
     factory: {
-      chain: "arbitrum",
+      chain: "etherlink",
       abi: lendingPoolFactoryAbi as any,
-      address: "0xB1fa9e45fBd6668d287FcAfE7ed9f37F7F24a8Ed",
-      startBlock: 174058000,
+      address: "0x86CA4a34eB2C11F7406220E402cc689bb811C0CD",
+      startBlock: 20856651,
     },
 
     pool: {
-      chain: "arbitrum",
+      chain: "etherlink",
       abi: lendingPoolAbi as any,
-      address: "0x0a97cC170B77362Fd29edC650D0BFf009B7b30eD",
-      startBlock: 174058000,
+      address: "0xb4F8A55030a9e2b3B52d6267223915846eB2d3EC",
+      startBlock: 20856651,
     },
 
     position: {
-      chain: "arbitrum",
+      chain: "etherlink",
       abi: positionAbi as any,
-      address: "0x616ea99db493b2200b62f13a15675954C0647C8e",
-      startBlock: 174058000,
+      address: "0x8A1c8f849f0C109bAE01A3d57264d453D23d6329",
+      startBlock: 20856651,
     },
   },
 });

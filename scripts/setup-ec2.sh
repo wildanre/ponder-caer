@@ -12,13 +12,13 @@ echo "📦 Updating system packages..."
 sudo yum update -y
 
 # Install Node.js (using NodeSource repository)
-echo "📦 Installing Node.js..."
-curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
+echo "📦 Installing Node.js 20..."
+curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
 sudo yum install -y nodejs
 
-# Install pnpm globally
-echo "📦 Installing pnpm..."
-npm install -g pnpm
+# Install pnpm globally (specific version for compatibility)
+echo "📦 Installing pnpm v9..."
+npm install -g pnpm@9.15.0
 
 # Install PM2 globally for process management
 echo "📦 Installing PM2..."

@@ -1,18 +1,6 @@
 import { ponder } from "ponder:registry";
-import { 
-  lendingPool,
-  basicTokenSender,
-  priceDataStream,
-  position,
-  liquiditySupply,
-  liquidityWithdraw,
-  collateralSupply,
-  borrowDebt,
-  borrowDebtCrosschain,
-  repayWithCollateral
-} from "../ponder.schema";
 
-// Import Supabase database client
+// Import Supabase database client only
 import { db, lendingPoolTable, basicTokenSenderTable, priceDataStreamTable, positionTable, liquiditySupplyTable, liquidityWithdrawTable, collateralSupplyTable, borrowDebtTable, borrowDebtCrosschainTable, repayWithCollateralTable } from "./db";
 
 // Factory Events
@@ -27,19 +15,14 @@ ponder.on("factory:LendingPoolCreated" as any, async ({ event, context }: any) =
     transactionHash: event.transaction.hash,
   };
 
-  // Write to Ponder internal database
-  await context.db
-    .insert(lendingPool)
-    .values(poolData);
-
-  // Write to Supabase
+  // Write to Supabase only
   try {
     await db.insert(lendingPoolTable).values({
       ...poolData,
       ltv: BigInt(poolData.ltv.toString()),
       createdAt: BigInt(poolData.createdAt.toString()),
       blockNumber: BigInt(poolData.blockNumber.toString()),
-    });
+    }).onConflictDoNothing();
     console.log("✅ LendingPool synced to Supabase:", poolData.id);
   } catch (error) {
     console.error("❌ Failed to sync LendingPool to Supabase:", error);
@@ -55,18 +38,13 @@ ponder.on("factory:BasicTokenSenderAdded" as any, async ({ event, context }: any
     transactionHash: event.transaction.hash,
   };
 
-  // Write to Ponder internal database
-  await context.db
-    .insert(basicTokenSender)
-    .values(senderData);
-
-  // Write to Supabase
+  // Write to Supabase only
   try {
     await db.insert(basicTokenSenderTable).values({
       ...senderData,
       chainId: BigInt(senderData.chainId.toString()),
       blockNumber: BigInt(senderData.blockNumber.toString()),
-    });
+    }).onConflictDoNothing();
     console.log("✅ BasicTokenSender synced to Supabase:", senderData.id);
   } catch (error) {
     console.error("❌ Failed to sync BasicTokenSender to Supabase:", error);
@@ -75,24 +53,19 @@ ponder.on("factory:BasicTokenSenderAdded" as any, async ({ event, context }: any
 
 ponder.on("factory:TokenDataStreamAdded" as any, async ({ event, context }: any) => {
   const streamData = {
-    id: `${event.args.token}-${event.args.dataStream}`,
+    id: `${event.args.token}-${event.args.dataStream}-${event.transaction.hash}-${event.log.logIndex}`,
     token: event.args.token,
     dataStream: event.args.dataStream,
     blockNumber: event.block.number,
     transactionHash: event.transaction.hash,
   };
 
-  // Write to Ponder internal database
-  await context.db
-    .insert(priceDataStream)
-    .values(streamData);
-
-  // Write to Supabase
+  // Write to Supabase only
   try {
     await db.insert(priceDataStreamTable).values({
       ...streamData,
       blockNumber: BigInt(streamData.blockNumber.toString()),
-    });
+    }).onConflictDoNothing();
     console.log("✅ PriceDataStream synced to Supabase:", streamData.id);
   } catch (error) {
     console.error("❌ Failed to sync PriceDataStream to Supabase:", error);
@@ -111,18 +84,13 @@ ponder.on("pool:CreatePosition" as any, async ({ event, context }: any) => {
     timestamp: event.block.timestamp,
   };
 
-  // Write to Ponder internal database
-  await context.db
-    .insert(position)
-    .values(positionData);
-
-  // Write to Supabase
+  // Write to Supabase only
   try {
     await db.insert(positionTable).values({
       ...positionData,
       blockNumber: BigInt(positionData.blockNumber.toString()),
       timestamp: BigInt(positionData.timestamp.toString()),
-    });
+    }).onConflictDoNothing();
     console.log("✅ Position synced to Supabase:", positionData.id);
   } catch (error) {
     console.error("❌ Failed to sync Position to Supabase:", error);
@@ -141,12 +109,7 @@ ponder.on("pool:SupplyLiquidity" as any, async ({ event, context }: any) => {
     timestamp: event.block.timestamp,
   };
 
-  // Write to Ponder internal database
-  await context.db
-    .insert(liquiditySupply)
-    .values(liquidityData);
-
-  // Write to Supabase
+  // Write to Supabase only
   try {
     await db.insert(liquiditySupplyTable).values({
       ...liquidityData,
@@ -154,7 +117,7 @@ ponder.on("pool:SupplyLiquidity" as any, async ({ event, context }: any) => {
       shares: BigInt(liquidityData.shares.toString()),
       blockNumber: BigInt(liquidityData.blockNumber.toString()),
       timestamp: BigInt(liquidityData.timestamp.toString()),
-    });
+    }).onConflictDoNothing();
     console.log("✅ LiquiditySupply synced to Supabase:", liquidityData.id);
   } catch (error) {
     console.error("❌ Failed to sync LiquiditySupply to Supabase:", error);
@@ -173,12 +136,7 @@ ponder.on("pool:WithdrawLiquidity" as any, async ({ event, context }: any) => {
     timestamp: event.block.timestamp,
   };
 
-  // Write to Ponder internal database
-  await context.db
-    .insert(liquidityWithdraw)
-    .values(withdrawData);
-
-  // Write to Supabase
+  // Write to Supabase only
   try {
     await db.insert(liquidityWithdrawTable).values({
       ...withdrawData,
@@ -186,7 +144,7 @@ ponder.on("pool:WithdrawLiquidity" as any, async ({ event, context }: any) => {
       shares: BigInt(withdrawData.shares.toString()),
       blockNumber: BigInt(withdrawData.blockNumber.toString()),
       timestamp: BigInt(withdrawData.timestamp.toString()),
-    });
+    }).onConflictDoNothing();
     console.log("✅ LiquidityWithdraw synced to Supabase:", withdrawData.id);
   } catch (error) {
     console.error("❌ Failed to sync LiquidityWithdraw to Supabase:", error);
@@ -204,19 +162,14 @@ ponder.on("pool:SupplyCollateral" as any, async ({ event, context }: any) => {
     timestamp: event.block.timestamp,
   };
 
-  // Write to Ponder internal database
-  await context.db
-    .insert(collateralSupply)
-    .values(collateralData);
-
-  // Write to Supabase
+  // Write to Supabase only
   try {
     await db.insert(collateralSupplyTable).values({
       ...collateralData,
       amount: BigInt(collateralData.amount.toString()),
       blockNumber: BigInt(collateralData.blockNumber.toString()),
       timestamp: BigInt(collateralData.timestamp.toString()),
-    });
+    }).onConflictDoNothing();
     console.log("✅ CollateralSupply synced to Supabase:", collateralData.id);
   } catch (error) {
     console.error("❌ Failed to sync CollateralSupply to Supabase:", error);
@@ -237,12 +190,7 @@ ponder.on("pool:BorrowDebtCrosschain" as any, async ({ event, context }: any) =>
     timestamp: event.block.timestamp,
   };
 
-  // Write to Ponder internal database
-  await context.db
-    .insert(borrowDebtCrosschain)
-    .values(borrowData);
-
-  // Write to Supabase
+  // Write to Supabase only
   try {
     await db.insert(borrowDebtCrosschainTable).values({
       ...borrowData,
@@ -252,7 +200,7 @@ ponder.on("pool:BorrowDebtCrosschain" as any, async ({ event, context }: any) =>
       bridgeTokenSender: BigInt(borrowData.bridgeTokenSender.toString()),
       blockNumber: BigInt(borrowData.blockNumber.toString()),
       timestamp: BigInt(borrowData.timestamp.toString()),
-    });
+    }).onConflictDoNothing();
     console.log("✅ BorrowDebtCrosschain synced to Supabase:", borrowData.id);
   } catch (error) {
     console.error("❌ Failed to sync BorrowDebtCrosschain to Supabase:", error);
@@ -271,12 +219,7 @@ ponder.on("pool:RepayWithCollateralByPosition" as any, async ({ event, context }
     timestamp: event.block.timestamp,
   };
 
-  // Write to Ponder internal database
-  await context.db
-    .insert(repayWithCollateral)
-    .values(repayData);
-
-  // Write to Supabase
+  // Write to Supabase only
   try {
     await db.insert(repayWithCollateralTable).values({
       ...repayData,
@@ -284,7 +227,7 @@ ponder.on("pool:RepayWithCollateralByPosition" as any, async ({ event, context }
       shares: BigInt(repayData.shares.toString()),
       blockNumber: BigInt(repayData.blockNumber.toString()),
       timestamp: BigInt(repayData.timestamp.toString()),
-    });
+    }).onConflictDoNothing();
     console.log("✅ RepayWithCollateral synced to Supabase:", repayData.id);
   } catch (error) {
     console.error("❌ Failed to sync RepayWithCollateral to Supabase:", error);

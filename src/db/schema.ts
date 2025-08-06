@@ -89,6 +89,8 @@ export const collateralSupplyTable = pgTable("collateral_supply", {
   timestampIdx: index("collateral_supply_timestamp_idx").on(table.timestamp),
 }));
 
+// Note: borrowDebtTable exists for API compatibility but may remain empty
+// as the lending pool only emits BorrowDebtCrosschain events, not regular BorrowDebt events
 export const borrowDebtTable = pgTable("borrow_debt", {
   id: text("id").primaryKey(), // txHash-logIndex
   user: text("user").notNull(),

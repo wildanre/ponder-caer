@@ -70,6 +70,8 @@ export const collateralSupply = onchainTable("collateral_supply", (t) => ({
   timestamp: t.bigint().notNull(),
 }));
 
+// Note: borrowDebt table exists for API compatibility but may remain empty
+// as the lending pool only emits BorrowDebtCrosschain events, not regular BorrowDebt events
 export const borrowDebt = onchainTable("borrow_debt", (t) => ({
   id: t.text().primaryKey(), // txHash-logIndex
   user: t.text().notNull(),

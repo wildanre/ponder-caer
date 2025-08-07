@@ -1,17 +1,21 @@
 import { Hono } from "hono";
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
-
-// Import route modules
-import { poolRoutes } from './routes/pools';
-import { positionRoutes } from './routes/positions';
-import { activityRoutes } from './routes/activities';
-import { userRoutes } from './routes/users';
-import { tokenRoutes } from './routes/tokens';
-import { statsRoutes } from './routes/stats';
-import { webhookRoutes } from './routes/webhooks';
+import { createYoga } from 'graphql-yoga';
+import { schema } from './graphql';
 
 const app = new Hono();
+
+// Create GraphQL Yoga instance
+const yoga = createYoga({
+  schema,
+  graphqlEndpoint: '/api/graphql',
+  landingPage: false,
+  cors: {
+    origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:8080'],
+    credentials: true,
+  },
+});
 
 // Middleware
 app.use('*', cors({
@@ -44,20 +48,38 @@ export const serializeBigInt = (obj: any): any => {
 app.get('/api/health', (c) => {
   return c.json({
     success: true,
-    message: 'Lending Pool API is healthy',
+    message: 'Lending Pool GraphQL API is healthy',
     timestamp: new Date().toISOString(),
-    version: '2.0.0'
+    version: '2.0.0',
+    graphql: {
+      endpoint: '/api/graphql',
+      playground: '/api/graphql'
+    }
   });
 });
 
-// Mount route modules
-app.route('/api', poolRoutes);
-app.route('/api', positionRoutes);
-app.route('/api', activityRoutes);
-app.route('/api', userRoutes);
-app.route('/api', tokenRoutes);
-app.route('/api', statsRoutes);
-app.route('/api', webhookRoutes);
+// GraphQL endpoint
+app.all('/api/graphql', async (c) => {
+  const request = new Request(c.req.url, {
+    method: c.req.method,
+    headers: c.req.header(),
+    body: c.req.method !== 'GET' && c.req.method !== 'HEAD' ? await c.req.text() : undefined,
+  });
+
+  const response = await yoga.fetch(request);
+  
+  // Convert Response to Hono Response
+  const headers: Record<string, string> = {};
+  response.headers.forEach((value, key) => {
+    headers[key] = value;
+  });
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers
+  });
+});
 
 // 404 handler
 app.notFound((c) => {

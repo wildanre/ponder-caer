@@ -1,4 +1,4 @@
-import { createConfig, factory } from "ponder";
+import { createConfig } from "ponder";
 import { config } from "dotenv";
 
 // Load environment variables
@@ -14,8 +14,11 @@ export default createConfig({
   chains: {
     etherlink: {
       id: 128123,
-      rpc:
-        process.env.ETHERLINK_TESTNET_RPC_URL
+      rpc: [
+        process.env.ETHERLINK_TESTNET_RPC_URL!,
+        process.env.ETHERLINK_TESTNET_RPC_URL_BACKUP!
+      ],
+      pollingInterval: 5000, // 5 second polling interval
     },
   },
   contracts: {
@@ -40,10 +43,11 @@ export default createConfig({
       startBlock: 20856651,
     },
 
+    // Add one pool address first for testing
     pool: {
       chain: "etherlink",
       abi: lendingPoolAbi as any,
-      address: "0xb4F8A55030a9e2b3B52d6267223915846eB2d3EC",
+      address: "0x47dAF2E09737E065b40d13271Bc46f89b783329D",
       startBlock: 20856651,
     },
 

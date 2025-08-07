@@ -1,12 +1,19 @@
 import { ponder } from "ponder:registry";
+import { rpcManager } from "./utils/rpcManager";
 
 // Import Supabase database client only
 import { db, lendingPoolTable, basicTokenSenderTable, priceDataStreamTable, positionTable, liquiditySupplyTable, liquidityWithdrawTable, collateralSupplyTable, borrowDebtTable, borrowDebtCrosschainTable, repayWithCollateralTable } from "./db";
 
-// Factory Events
+// Factory event handler dengan RPC switching
 ponder.on("factory:LendingPoolCreated" as any, async ({ event, context }: any) => {
+  
+  // Check if we should switch RPC and log status
+  rpcManager.shouldSwitchRpc(event.block.number);
+  rpcManager.logStatus(event.block.number);
+
+  // Event ini akan mendeteksi pool baru yang dibuat oleh factory
   const poolData = {
-    id: event.args.lendingPool,
+    id: event.args.lendingPool, // Alamat pool baru
     collateralToken: event.args.collateralToken,
     borrowToken: event.args.borrowToken,
     ltv: event.args.ltv,
@@ -30,6 +37,10 @@ ponder.on("factory:LendingPoolCreated" as any, async ({ event, context }: any) =
 });
 
 ponder.on("factory:BasicTokenSenderAdded" as any, async ({ event, context }: any) => {
+  // Check RPC switching and log status
+  rpcManager.shouldSwitchRpc(event.block.number);
+  rpcManager.logStatus(event.block.number);
+  
   const senderData = {
     id: `${event.args.chainId}-${event.args.basicTokenSender}`,
     chainId: event.args.chainId,
@@ -74,6 +85,9 @@ ponder.on("factory:TokenDataStreamAdded" as any, async ({ event, context }: any)
 
 // Pool Events
 ponder.on("pool:CreatePosition" as any, async ({ event, context }: any) => {
+  // Check RPC switching
+  rpcManager.shouldSwitchRpc(event.block.number);
+  
   const positionData = {
     id: event.args.positionAddress,
     user: event.args.user,
@@ -283,4 +297,11 @@ ponder.on("position:WithdrawCollateral" as any, async ({ event, context }: any) 
     blockNumber: event.block.number,
     transactionHash: event.transaction.hash,
   });
+});
+
+// Logging startup message
+console.log("🚀 Ponder indexer started");
+console.log("📡 RPC URLs:", {
+  primary: process.env.ETHERLINK_TESTNET_RPC_URL,
+  backup: process.env.ETHERLINK_TESTNET_RPC_URL_BACKUP
 });
